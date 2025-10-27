@@ -1,0 +1,31 @@
+behaviors:
+  GhostReach:
+    trainer_type: sac
+    hyperparameters:
+      batch_size: 1024
+      buffer_size: 50000
+      learning_rate: 0.0003
+      buffer_init_steps: 1000
+      init_entcoef: 0.05
+      steps_per_update: 1
+      learning_rate_schedule: linear
+    network_settings:
+      normalize: False
+      hidden_units: 128
+      num_layers: 2
+      vis_encode_type: simple
+    reward_signals:
+      extrinsic:
+        gamma: 0.99
+        strength: 1.0
+    behavioral_cloning:
+      demo_path: 
+      strength: 0.5
+      steps: 0
+      samples_per_update: 256
+
+    keep_checkpoints: 5
+    checkpoint_interval: 5000
+    max_steps: 300000
+    time_horizon: 64
+    summary_freq: 5000
