@@ -119,6 +119,4 @@ InitTestScene*.unity*
 obj/
 results/
 ML-Agents/
-*.demo
-*.meta
 Assets/ML-Agents/
