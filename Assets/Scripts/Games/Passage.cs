@@ -12,6 +12,10 @@ public class Passage : MonoBehaviour
         /// Transport pacman through passages
         /// If contact triggered with pacman, then set the position to the connection's
         
+        if (other.CompareTag("Pacman"))
+        {
+            other.transform.localPosition = connection.localPosition;
+        }
         /// ////////////////////////////////////////////////////////////////////
     }
 }

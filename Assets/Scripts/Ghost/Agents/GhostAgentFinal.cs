@@ -86,6 +86,21 @@ public class GhostAgentFinal : Agent
             /// Note:
             /// For the code from Task 3-1, remove the conditional statement that checks taskMode
             
+            pacman.transform.localPosition = mPacmanStartLocation;
+            mMovement.ResetState();
+
+            int ghostNodeIndex = Random.Range(0, mNodeList.Count);
+            Transform ghostSpawnNode = mNodeList[ghostNodeIndex];
+            transform.localPosition = ghostSpawnNode.localPosition;
+
+            int pacmanNodeIndex;
+            do
+            {
+                pacmanNodeIndex = Random.Range(0, mNodeList.Count);
+            } while (pacmanNodeIndex == ghostNodeIndex);
+
+            Transform pacmanSpawnNode = mNodeList[pacmanNodeIndex];
+            pacman.transform.localPosition = pacmanSpawnNode.localPosition;
 
             //////////////////////////////////////////////////////////////////////
 
@@ -114,6 +129,17 @@ public class GhostAgentFinal : Agent
         /// Note:
         /// For the code from Task 3-2, remove the conditional statement that checks taskMode
         
+        Vector2 pacmanPos = pacman.transform.localPosition;
+        sensor.AddObservation(pacmanPos);
+
+        Vector2 ghostPos = transform.localPosition;
+        sensor.AddObservation(ghostPos);
+
+        mAvailableDirOneHot = GetAvailableDirections();
+        sensor.AddObservation(mAvailableDirOneHot);
+
+        Vector2 displacement = pacmanPos - ghostPos;
+        sensor.AddObservation(displacement);      
         
         /// ////////////////////////////////////////////////////////////////////
     }
@@ -134,6 +160,10 @@ public class GhostAgentFinal : Agent
             /// <TODO> Task 5-0
             /// Copy the code you've implemented in Task 2-3
             
+            int action = actions.DiscreteActions[0];
+            Vector3 moveDir = actionDict[action];
+            mMovement.SetDirection(moveDir);
+            mAction = action;
             
             /// ////////////////////////////////////////////////////////////////////
             
@@ -147,6 +177,27 @@ public class GhostAgentFinal : Agent
             ///     - case 1: BehaviorMode.Frightened -> Reverse the direction (Up <-> Down, Right <-> Left)
             ///     - case 2: BehaviorMode.Home -> Set Up direction only
             
+            int action = actions.DiscreteActions[0];
+
+            if (mBehaviorMode == BehaviorMode.Frightened)
+            {
+                switch (action)
+                {
+                    case 0: action = 1; break; // Up -> Down
+                    case 1: action = 0; break; // Down -> Up
+                    case 2: action = 3; break; // Right -> Left
+                    case 3: action = 2; break; // Left -> Right
+                }
+            }
+            else if (mBehaviorMode == BehaviorMode.Home)
+            {
+                action = 0;
+            }
+
+            Vector3 moveDir = actionDict[action];
+            mMovement.SetDirection(moveDir);
+            mAction = action;
+            
             /// ////////////////////////////////////////////////////////////////////
         }
     }
@@ -157,7 +208,26 @@ public class GhostAgentFinal : Agent
         /// <TODO> Task 5-0
         /// Copy the code you've implemented in Task 2-4
         
-        
+        Vector2 pacmanPos = pacman.transform.localPosition;
+        Vector2 ghostPos = transform.localPosition;
+        float currentDistance = ComputeTaxiDistance(pacmanPos, ghostPos);
+        float distanceReward = Mathf.Exp(-0.005f * currentDistance * currentDistance) - 1.0f;
+        AddReward(distanceReward);
+
+        float movingReward = -1.0f;
+        float displacement = Vector2.Distance(ghostPos, mGhostPosPrev);
+        if (displacement < 0.5f)
+        {
+            AddReward(movingReward);
+        }
+
+        float blockedReward = -1.0f;
+        mGhostPosPrev = ghostPos;
+        if (mAvailableDirOneHot[mAction] == 0.0f)
+        {
+            AddReward(blockedReward);
+        }
+
         /// ////////////////////////////////////////////////////////////////////
     }
 
