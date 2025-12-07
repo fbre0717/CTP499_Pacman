@@ -58,6 +58,10 @@ public class PacmanMovement : MonoBehaviour
         /// 2. Calculate translation distance using: speed * multiplier * deltaTime * direction
         /// 3. Move to new position using MovePosition()
         
+        Vector2 currentPosition = mRigidBody.position;
+        Vector2 translation = speedDefault * speedMultiplier * Time.fixedDeltaTime * mCurrDir;
+        Vector2 newPosition = currentPosition + translation;
+        mRigidBody.MovePosition(newPosition);
 
         //////////////////////////////////////////////////////////////////////
     }
@@ -74,6 +78,15 @@ public class PacmanMovement : MonoBehaviour
         /// 2. If no obstacle: set mCurrDir and clear mNextDir with origin
         /// 3. If obstacle exists: store direction in mNextDir queue
 
+        if (!Occupied(direction))
+        {
+            mCurrDir = direction;
+            mNextDir = Vector2.zero;
+        }
+        else
+        {
+            mNextDir = direction;
+        }
 
         //////////////////////////////////////////////////////////////////////
     }

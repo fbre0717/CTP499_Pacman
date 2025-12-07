@@ -110,6 +110,43 @@ public class GhostAgentFinalAstar : Agent
         ///     - Check the distance between the next path eleemnt and current local position using pathStepCount 
         ///     - If the distance < 1.0f Increase pathStepCount
         ///     - Calculate bestDirection using adjacent path element with pathStepCount
+
+        Vector3 currentPos = transform.localPosition;
+        if (pathStepCount + 1 < mPath.Count)
+        {
+            Vector3 nextPos = mPath[pathStepCount + 1].localPosition;
+            if (Vector3.Distance(currentPos, nextPos) < 1.0f)
+            {
+                pathStepCount++;
+            }
+        }
+        
+        Vector3 frPos, toPos;
+        if (pathStepCount + 1 < mPath.Count)
+        {
+            frPos = mPath[pathStepCount].localPosition;
+            toPos = mPath[pathStepCount + 1].localPosition;
+        }
+        else
+        {
+            frPos = mPath[mPath.Count - 2].localPosition;
+            toPos = mPath[mPath.Count - 1].localPosition;
+        }
+        Vector2 bestDirection = (new Vector2(toPos.x, toPos.y) - new Vector2(frPos.x, frPos.y)).normalized;
+
+        float maxDot = float.NegativeInfinity;
+
+        for (int i = 0; i < directions.Length; i++)
+        {
+            Vector2 dir2 = new Vector2(directions[i].x, directions[i].y);
+            float dot = Vector2.Dot(bestDirection, dir2);
+            if (dot > maxDot)
+            {
+                maxDot = dot;
+                bestIdx = i;
+            }
+        }        
+
         /// //////////////////////////////////////////////////////////////////////
 
         ActionSegment<int> DiscreteActions = actionsOut.DiscreteActions;
@@ -126,6 +163,21 @@ public class GhostAgentFinalAstar : Agent
         /// Note:
         /// For the code from Task 5-0, remove the conditional statement that checks taskMode
 
+        pacman.transform.localPosition = mPacmanStartLocation;
+        mMovement.ResetState();
+
+        int ghostNodeIndex = Random.Range(0, mNodeList.Count);
+        Transform ghostSpawnNode = mNodeList[ghostNodeIndex];
+        transform.localPosition = ghostSpawnNode.localPosition;
+
+        int pacmanNodeIndex;
+        do
+        {
+            pacmanNodeIndex = Random.Range(0, mNodeList.Count);
+        } while (pacmanNodeIndex == ghostNodeIndex);
+
+        Transform pacmanSpawnNode = mNodeList[pacmanNodeIndex];
+        pacman.transform.localPosition = pacmanSpawnNode.localPosition;
 
         //////////////////////////////////////////////////////////////////////
 
@@ -143,6 +195,9 @@ public class GhostAgentFinalAstar : Agent
         //////////////////////////////////////////////////////////////////////
         /// Copy the code you've implemented in Task 4-1    
 
+        Transform currentNode = GetClosestNode(transform.localPosition);
+        Transform targetNode = GetClosestNode(pacman.transform.localPosition);
+        mPath = FindPath(currentNode, targetNode);
 
         //////////////////////////////////////////////////////////////////////
 
@@ -161,6 +216,17 @@ public class GhostAgentFinalAstar : Agent
         /// Note:
         /// Remove the conditional statement that checks taskMode
 
+        Vector2 pacmanPos = pacman.transform.localPosition;
+        sensor.AddObservation(pacmanPos);
+
+        Vector2 ghostPos = transform.localPosition;
+        sensor.AddObservation(ghostPos);
+
+        mAvailableDirOneHot = GetAvailableDirections();
+        sensor.AddObservation(mAvailableDirOneHot);
+
+        Vector2 displacement = pacmanPos - ghostPos;
+        sensor.AddObservation(displacement);   
 
         /// ////////////////////////////////////////////////////////////////////
     }
@@ -178,6 +244,10 @@ public class GhostAgentFinalAstar : Agent
         //////////////////////////////////////////////////////////////////////
         /// Copy the code you've implemented in Task 5-0
 
+        int action = actions.DiscreteActions[0];
+        Vector3 moveDir = actionDict[action];
+        mMovement.SetDirection(moveDir);
+        mAction = action;
 
         /// ////////////////////////////////////////////////////////////////////
     }
@@ -187,6 +257,25 @@ public class GhostAgentFinalAstar : Agent
         //////////////////////////////////////////////////////////////////////
         /// Copy the code you've implemented in Task 5-0
 
+        Vector2 pacmanPos = pacman.transform.localPosition;
+        Vector2 ghostPos = transform.localPosition;
+        float currentDistance = ComputeTaxiDistance(pacmanPos, ghostPos);
+        float distanceReward = Mathf.Exp(-0.005f * currentDistance * currentDistance) - 1.0f;
+        AddReward(distanceReward);
+
+        float movingReward = -1.0f;
+        float displacement = Vector2.Distance(ghostPos, mGhostPosPrev);
+        if (displacement < 0.5f)
+        {
+            AddReward(movingReward);
+        }
+
+        float blockedReward = -1.0f;
+        mGhostPosPrev = ghostPos;
+        if (mAvailableDirOneHot[mAction] == 0.0f)
+        {
+            AddReward(blockedReward);
+        }
 
         /// ////////////////////////////////////////////////////////////////////
     }

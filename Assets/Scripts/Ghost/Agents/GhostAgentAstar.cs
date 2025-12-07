@@ -108,6 +108,31 @@ public class GhostAgentAstar : Agent
         /// Hint:
         /// Use System.Array.IndexOf() to get the index of an element in an array
         
+        Vector3 frPos, toPos;
+        if (agentStepCount + 1 < mPath.Count)
+        {
+            frPos = mPath[agentStepCount].localPosition;
+            toPos = mPath[agentStepCount + 1].localPosition;
+        }
+        else
+        {
+            frPos = mPath[mPath.Count - 2].localPosition;
+            toPos = mPath[mPath.Count - 1].localPosition;
+        }
+        bestDirection = (new Vector2(toPos.x, toPos.y) - new Vector2(frPos.x, frPos.y)).normalized;
+
+        float maxDot = float.NegativeInfinity;
+
+        for (int i = 0; i < directions.Length; i++)
+        {
+            Vector2 dir2 = new Vector2(directions[i].x, directions[i].y);
+            float dot = Vector2.Dot(bestDirection, dir2);
+            if (dot > maxDot)
+            {
+                maxDot = dot;
+                bestIdx = i;
+            }
+        }
         
         /// ////////////////////////////////////////////////////////////////////
         
@@ -126,6 +151,21 @@ public class GhostAgentAstar : Agent
         /// Note:
         /// For the code from Task 3-1, remove the conditional statement that checks taskMode
         
+        pacman.transform.localPosition = mPacmanStartLocation;
+        mMovement.ResetState();
+
+        int ghostNodeIndex = Random.Range(0, mNodeList.Count);
+        Transform ghostSpawnNode = mNodeList[ghostNodeIndex];
+        transform.localPosition = ghostSpawnNode.localPosition;
+
+        int pacmanNodeIndex;
+        do
+        {
+            pacmanNodeIndex = Random.Range(0, mNodeList.Count);
+        } while (pacmanNodeIndex == ghostNodeIndex);
+
+        Transform pacmanSpawnNode = mNodeList[pacmanNodeIndex];
+        pacman.transform.localPosition = pacmanSpawnNode.localPosition;
 
         //////////////////////////////////////////////////////////////////////
         
@@ -144,6 +184,9 @@ public class GhostAgentAstar : Agent
         /// 2. Get targetNode using GetClosestNode() for pacman's current local position
         /// 3. Find A* path from currentNode to targetNode using FindPath(), and store it in mPath
         
+        Transform currentNode = GetClosestNode(transform.localPosition);
+        Transform targetNode = GetClosestNode(pacman.transform.localPosition);
+        mPath = FindPath(currentNode, targetNode);
 
         //////////////////////////////////////////////////////////////////////
 
@@ -162,6 +205,17 @@ public class GhostAgentAstar : Agent
         /// Note:
         /// For the code from Task 3-2, remove the conditional statement that checks taskMode
         
+        Vector2 pacmanPos = pacman.transform.localPosition;
+        sensor.AddObservation(pacmanPos);
+
+        Vector2 ghostPos = transform.localPosition;
+        sensor.AddObservation(ghostPos);
+
+        mAvailableDirOneHot = GetAvailableDirections();
+        sensor.AddObservation(mAvailableDirOneHot);
+
+        Vector2 displacement = pacmanPos - ghostPos;
+        sensor.AddObservation(displacement);
         
         /// ////////////////////////////////////////////////////////////////////
     }
@@ -179,6 +233,12 @@ public class GhostAgentAstar : Agent
         /// <TODO> Task 4-0
         /// Copy the code you've implemented in Task 2-3
         
+        int action = actions.DiscreteActions[0];
+        if (actionDict.TryGetValue(action, out Vector3 moveDir))
+        {
+            mMovement.SetDirection(moveDir);
+            mAction = action;
+        }
         
         /// ////////////////////////////////////////////////////////////////////
     }
@@ -189,6 +249,25 @@ public class GhostAgentAstar : Agent
         /// <TODO> Task 4-0
         /// Copy the code you've implemented in Task 2-4
         
+        Vector2 pacmanPos = pacman.transform.localPosition;
+        Vector2 ghostPos = transform.localPosition;
+        float currentDistance = ComputeTaxiDistance(pacmanPos, ghostPos);
+        float distanceReward = Mathf.Exp(-0.005f * currentDistance * currentDistance) - 1.0f;
+        AddReward(distanceReward);
+
+        float movingReward = -1.0f;
+        float displacement = Vector2.Distance(ghostPos, mGhostPosPrev);
+        if (displacement < 0.5f)
+        {
+            AddReward(movingReward);
+        }
+
+        float blockedReward = -1.0f;
+        mGhostPosPrev = ghostPos;
+        if (mAvailableDirOneHot[mAction] == 0.0f)
+        {
+            AddReward(blockedReward);
+        }
         
         /// ////////////////////////////////////////////////////////////////////
     }

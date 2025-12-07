@@ -29,6 +29,37 @@ public class Pacman : MonoBehaviour
         ///     - Use Input.GetKeyDown() for responsive input
         ///     - Conver radians to degrees: angle * Mathf.Rad2Deg
 
+        Vector2 inputDir = Vector2.zero;
+        if (Input.GetKeyDown(KeyCode.W) || Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            inputDir = Vector2.up;
+        }
+        else if (Input.GetKeyDown(KeyCode.S) || Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            inputDir = Vector2.down;
+        }
+        else if (Input.GetKeyDown(KeyCode.A) || Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            inputDir = Vector2.left;
+        }
+        else if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            inputDir = Vector2.right;
+        }
+
+        if (inputDir != Vector2.zero)
+        {
+            mMovement.SetDirection(inputDir);
+        }
+
+
+        Vector2 currDir = mMovement.mCurrDir;
+        if (currDir != Vector2.zero)
+        {
+            float angleRad = Mathf.Atan2(currDir.y, currDir.x);
+            float angleDeg = angleRad * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.AngleAxis(angleDeg, Vector3.forward);
+        }
         
         //////////////////////////////////////////////////////////////////////
     }

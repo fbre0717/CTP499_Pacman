@@ -1,5 +1,5 @@
 behaviors:
-  GhostReach:
+  PacmanRun:
     trainer_type: ppo
     hyperparameters:
       batch_size: 1024
@@ -22,6 +22,6 @@ behaviors:
         strength: 1.0
     keep_checkpoints: 5
     checkpoint_interval: 5000
-    max_steps: 500000
+    max_steps: 2500000
     time_horizon: 64
     summary_freq: 5000

@@ -101,6 +101,12 @@ public class GhostAgent : Agent
         ///     - Use ResetState for initialize ghost's movement
         ///     - Use either SetPosition or direct substitution for updating ghost position
 
+        pacman.transform.localPosition = mPacmanStartLocation;
+        mMovement.ResetState();
+
+        int ghostNodeIndex = Random.Range(0, mNodeList.Count);
+        Transform ghostSpawnNode = mNodeList[ghostNodeIndex];
+        transform.localPosition = ghostSpawnNode.localPosition;
 
         //////////////////////////////////////////////////////////////////////
 
@@ -114,6 +120,14 @@ public class GhostAgent : Agent
             /// 1. Randomly select the random node index while ensuring that Pacman and ghost do not spawn at the same node.
             /// 2. Initialize Pacman's local position using the selected random node.
 
+            int pacmanNodeIndex;
+            do
+            {
+                pacmanNodeIndex = Random.Range(0, mNodeList.Count);
+            } while (pacmanNodeIndex == ghostNodeIndex);
+
+            Transform pacmanSpawnNode = mNodeList[pacmanNodeIndex];
+            pacman.transform.localPosition = pacmanSpawnNode.localPosition;
 
             //////////////////////////////////////////////////////////////////////
         }
@@ -147,6 +161,14 @@ public class GhostAgent : Agent
         /// Hints:
         /// Use sensor.AddObservation() to add observations
         
+        Vector2 pacmanPos = pacman.transform.localPosition;
+        sensor.AddObservation(pacmanPos);
+
+        Vector2 ghostPos = transform.localPosition;
+        sensor.AddObservation(ghostPos);
+
+        mAvailableDirOneHot = GetAvailableDirections();
+        sensor.AddObservation(mAvailableDirOneHot);        
         
         //////////////////////////////////////////////////////////////////////
         
@@ -160,6 +182,8 @@ public class GhostAgent : Agent
             /// 1. Compute displacement vector from ghost to Pacman
             /// 2. Add observation for displacement vector (2 dimensions)
             
+            Vector2 displacement = pacmanPos - ghostPos;
+            sensor.AddObservation(displacement);            
 
             //////////////////////////////////////////////////////////////////////
         }
@@ -185,6 +209,10 @@ public class GhostAgent : Agent
         /// 3. Set ghost movement direction using mMovement.SetDirection()
         /// 4. Store action to mAction for computing reward
         
+        int action = actions.DiscreteActions[0];
+        Vector3 moveDir = actionDict[action];
+        mMovement.SetDirection(moveDir);
+        mAction = action;
         
         //////////////////////////////////////////////////////////////////////
     }
@@ -208,6 +236,25 @@ public class GhostAgent : Agent
         /// Hints:
         /// Use AddReward() to assign reward to the agent.
         
+        Vector2 pacmanPos = pacman.transform.localPosition;
+        Vector2 ghostPos = transform.localPosition;
+        float currentDistance = ComputeTaxiDistance(pacmanPos, ghostPos);
+        float distanceReward = Mathf.Exp(-0.005f * currentDistance * currentDistance) - 1.0f;
+        AddReward(distanceReward);
+
+        float movingReward = -1.0f;
+        float displacement = Vector2.Distance(ghostPos, mGhostPosPrev);
+        if (displacement < 0.5f)
+        {
+            AddReward(movingReward);
+        }
+
+        float blockedReward = -1.0f;
+        mGhostPosPrev = ghostPos;
+        if (mAvailableDirOneHot[mAction] == 0.0f)
+        {
+            AddReward(blockedReward);
+        }
         
         //////////////////////////////////////////////////////////////////////
     }

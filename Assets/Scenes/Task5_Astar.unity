@@ -307,9 +307,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f2902496c0120472b90269f94a0aec7e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Record: 1
-  NumStepsToRecord: 10000
-  DemonstrationName: task5_demo10000
+  Record: 0
+  NumStepsToRecord: 20000
+  DemonstrationName: task5_demo20000
   DemonstrationDirectory: 
 --- !u!1 &225333780
 GameObject:
